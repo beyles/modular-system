@@ -10,7 +10,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer.json
+# Copy composer.json (no composer.lock yet)
 COPY composer.json ./
 
 # Install dependencies
@@ -19,17 +19,16 @@ RUN composer install --no-dev --no-scripts --no-progress --prefer-dist --optimiz
 # Copy the rest of the project
 COPY . .
 
-# Set Symfony public/ as DocumentRoot
-WORKDIR /var/www/html/public
+# ✅ Change Apache DocumentRoot to Symfony public/
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+RUN sed -i 's|/var/www/|/var/www/html/public|g' /etc/apache2/apache2.conf
+RUN a2enmod rewrite
+
+# Permissions (make sure Apache can read public/)
+RUN chown -R www-data:www-data /var/www/html
 
 # Run composer again to finish setup
-WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader || true
-
-# Enable Apache mod_rewrite for Symfony routing
-RUN a2enmod rewrite
-RUN service apache2 restart
 
 EXPOSE 80
 
