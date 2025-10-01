@@ -10,16 +10,21 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer.json only (no composer.lock yet)
+# Copy composer.json
 COPY composer.json ./
 
-# Install dependencies (this will generate composer.lock inside container)
+# Install dependencies
 RUN composer install --no-dev --no-scripts --no-progress --prefer-dist --optimize-autoloader || true
 
 # Copy the rest of the project
 COPY . .
 
-# Run composer again with full setup
+# Set Symfony public/ as DocumentRoot
+WORKDIR /var/www/html/public
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+
+# Run composer again to finish setup
+WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader || true
 
 # Enable Apache mod_rewrite for Symfony routing
