@@ -10,11 +10,10 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first (better cache)
+# Copy only composer.json first
 COPY composer.json ./
-COPY composer.lock ./
 
-# Install Symfony dependencies
+# Install Symfony dependencies (this will create composer.lock)
 RUN composer install --no-dev --no-scripts --no-progress --prefer-dist --optimize-autoloader
 
 # Now copy the rest of the project
@@ -27,7 +26,6 @@ RUN composer install --no-dev --optimize-autoloader
 RUN a2enmod rewrite
 RUN service apache2 restart
 
-# Expose port 80
 EXPOSE 80
 
 CMD ["apache2-foreground"]
